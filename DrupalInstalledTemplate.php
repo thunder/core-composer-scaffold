@@ -24,10 +24,13 @@ class DrupalInstalledTemplate {
    *   The PHP code to write to the DrupalInstalled class.
    */
   public static function getCode(PackageInterface $root_package, InstalledRepositoryInterface $repository): string {
-    // Write out a hash of the version information to a file so we can use it.
-    $versions = $repository->getPackages();
-    usort($versions, fn (PackageInterface $a, PackageInterface $b) => strcmp($a->getUniqueName(), $b->getUniqueName()));
-    $versions = array_reduce($versions, fn (string $carry, PackageInterface $package) => $carry . $package->getUniqueName() . '-' . $package->getSourceReference() . '|', '');
+    // Ensure the packages are sorted consistently.
+    $packages = $repository->getPackages();
+    usort($packages, static function (PackageInterface $a, PackageInterface $b) {
+      return $a->getUniqueName() <=> $b->getUniqueName();
+    });
+    $versions = array_reduce($packages, fn (string $carry, PackageInterface $package) => $carry . $package->getUniqueName() . '-' . $package->getSourceReference() . '|', '');
+    
     // Add the root_package package version info so custom code changes and
     // root_package package version changes result in the hash changing.
     $versions .= $root_package->getUniqueName() . '-' . $root_package->getSourceReference();
